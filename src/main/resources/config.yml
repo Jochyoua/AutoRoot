@@ -1,0 +1,243 @@
+planting:
+  delay_ticks: 40
+  scan_interval_ticks: 20
+  enable_event_listeners_for_item_drops: false
+  debug: false
+  enable_particles: true
+  enable_sound: true
+  require_nearest_player_can_build: true
+  enable_coreprotect_logging: true
+
+falling_seeds:
+  enabled: true
+  max_leaf_scan_height: 128
+  interval_ticks: 120
+  natural_seed_fall_weight: 15
+  max_seed_fall_weight: 1000
+  max_seeds_per_cycle: 32
+  max_chunks_per_cycle_per_player: 10
+  consume_leaf_on_seed_spawn: true
+  minimum_canopy: 2
+
+  leaf_cache:
+    dynamic_scaling_enabled: true
+    base_lifespan_ms: 60000
+    min_lifespan_ms: 10000
+    max_lifespan_ms: 60000
+
+  wind:
+    direction_x: 0.1
+    direction_z: -0.05
+    strength: 1.0
+
+ignore_vegetation:
+  enabled: true
+  list:
+    - flowers
+    - small_flowers
+    - short_grass
+    - tall_grass
+    - fern
+    - large_fern
+    - dead_bush
+    - sweet_berry_bush
+    - red_mushroom
+    - brown_mushroom
+
+defaults:
+  plant_chance: 0.75
+  valid_blocks: [ DIRT, GRASS_BLOCK, PODZOL, COARSE_DIRT, MUD ]
+  biome_whitelist: [ ]
+  enable_falling_seeds: false # Only works for TREES.
+  destroy_item_on_failure: false
+
+plantables:
+
+  # --- CUSTOM COMMAND / GAMBLE EXAMPLE --- > COMMANDS SUPPORT PAPI PLACEHOLDERS
+  AIR:
+    items: [AMETHYST_SHARD]
+    plant_chance: 0.20
+    valid_blocks: [ OBSIDIAN ]
+    commands:
+      - 'minecraft:tellraw %nearest_player_name% "&e[AutoRoot] &7I hope the trade-off was worth the exchange!"'
+      - '[randomEntry] minecraft:give %nearest_player_name% emerald 1 | minecraft:give %nearest_player_name% gold_ingot 1'
+    destroy_item_on_failure: true
+
+  # --- TREES ---
+
+
+  OAK_SAPLING:
+    items: [ OAK_SAPLING, APPLE ]
+    valid_blocks: [ ]
+    plant_chance: 0.90
+    biome_whitelist: [ ]
+    enable_falling_seeds: true
+
+  BIRCH_SAPLING:
+    items: [ BIRCH_SAPLING ]
+    valid_blocks: [ ]
+    plant_chance: 0.85
+    enable_falling_seeds: true
+
+  SPRUCE_SAPLING:
+    items: [ SPRUCE_SAPLING ]
+    valid_blocks: [ ]
+    plant_chance: 0.85
+    enable_falling_seeds: true
+
+  JUNGLE_SAPLING:
+    items: [ JUNGLE_SAPLING ]
+    valid_blocks: [ ]
+    plant_chance: 0.80
+    enable_falling_seeds: true
+
+  ACACIA_SAPLING:
+    items: [ ACACIA_SAPLING ]
+    valid_blocks: [ ]
+    plant_chance: 0.80
+    enable_falling_seeds: true
+
+  DARK_OAK_SAPLING:
+    items: [ DARK_OAK_SAPLING ]
+    valid_blocks: [ ]
+    plant_chance: 0.80
+    enable_falling_seeds: true
+
+  MANGROVE_PROPAGULE:
+    items: [ MANGROVE_PROPAGULE ]
+    valid_blocks: [ ]
+    plant_chance: 0.75
+    enable_falling_seeds: true
+
+  CHERRY_SAPLING:
+    items: [ CHERRY_SAPLING ]
+    valid_blocks: [ ]
+    plant_chance: 0.85
+    enable_falling_seeds: true
+
+  PALE_OAK_SAPLING:
+    items: [ PALE_OAK_SAPLING ]
+    valid_blocks: [ ]
+    biome_whitelist: [ PALE_GARDEN ]
+    plant_chance: 0.85
+    enable_falling_seeds: true
+
+
+  # --- OVERWORLD CROPS ---
+
+  WHEAT:
+    items: [ WHEAT_SEEDS ]
+    valid_blocks: [ FARMLAND ]
+    plant_chance: 0.80
+
+  CARROTS:
+    items: [ CARROT ]
+    valid_blocks: [ FARMLAND ]
+    plant_chance: 0.80
+
+  POTATOES:
+    items: [ POTATO ]
+    valid_blocks: [ FARMLAND ]
+    plant_chance: 0.80
+
+  BEETROOTS:
+    items: [ BEETROOT_SEEDS ]
+    valid_blocks: [ FARMLAND ]
+    plant_chance: 0.80
+
+  MELON_STEM:
+    items: [ MELON_SEEDS ]
+    valid_blocks: [ FARMLAND ]
+    plant_chance: 0.75
+
+  PUMPKIN_STEM:
+    items: [ PUMPKIN_SEEDS ]
+    valid_blocks: [ FARMLAND ]
+    plant_chance: 0.75
+
+
+  # --- NETHER CROPS ---
+
+  NETHER_WART:
+    items: [ NETHER_WART ]
+    valid_blocks: [ SOUL_SAND ]
+    plant_chance: 0.65
+
+  CRIMSON_FUNGUS:
+    items: [ CRIMSON_FUNGUS ]
+    valid_blocks: [ NETHERRACK, CRIMSON_NYLIUM ]
+    plant_chance: 0.70
+
+  WARPED_FUNGUS:
+    items: [ WARPED_FUNGUS ]
+    valid_blocks: [ NETHERRACK, WARPED_NYLIUM ]
+    plant_chance: 0.70
+
+  CRIMSON_ROOTS:
+    items: [ CRIMSON_ROOTS ]
+    valid_blocks: [ CRIMSON_NYLIUM ]
+    plant_chance: 0.65
+
+  WARPED_ROOTS:
+    items: [ WARPED_ROOTS ]
+    valid_blocks: [ WARPED_NYLIUM ]
+    plant_chance: 0.65
+
+
+  # --- SAND PLANTS ---
+
+  SUGAR_CANE:
+    items: [ SUGAR_CANE ]
+    valid_blocks: [ SAND, RED_SAND, DIRT, GRASS_BLOCK, PODZOL ]
+    plant_chance: 0.70
+
+  CACTUS:
+    items: [ CACTUS ]
+    valid_blocks: [ SAND, RED_SAND ]
+    plant_chance: 0.70
+
+
+  # --- BAMBOO & BERRIES ---
+
+  BAMBOO:
+    items: [ BAMBOO ]
+    valid_blocks: [ DIRT, GRASS_BLOCK, PODZOL, SAND ]
+    plant_chance: 0.75
+
+  SWEET_BERRY_BUSH:
+    items: [ SWEET_BERRIES ]
+    valid_blocks: [ DIRT, GRASS_BLOCK, PODZOL ]
+    plant_chance: 0.70
+
+
+  # --- FLOWERS ---
+
+  DANDELION:
+    items: [ DANDELION ]
+    valid_blocks: [ DIRT, GRASS_BLOCK ]
+    plant_chance: 0.60
+
+  POPPY:
+    items: [ POPPY ]
+    valid_blocks: [ DIRT, GRASS_BLOCK ]
+    plant_chance: 0.60
+
+  BLUE_ORCHID:
+    items: [ BLUE_ORCHID ]
+    valid_blocks: [ GRASS_BLOCK ]
+    plant_chance: 0.55
+
+  LILAC:
+    items: [ LILAC ]
+    valid_blocks: [ DIRT, GRASS_BLOCK ]
+    plant_chance: 0.55
+
+  ROSE_BUSH:
+    items: [ ROSE_BUSH ]
+    valid_blocks: [ DIRT, GRASS_BLOCK ]
+    plant_chance: 0.55
+
+  PEONY:
+    items: [ PEONY ]
+    valid_blocks: [ DIRT, GRASS_BLOCK ]
+    plant_chance: 0.55

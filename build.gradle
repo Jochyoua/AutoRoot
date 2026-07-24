@@ -1,0 +1,75 @@
+plugins {
+    id 'java'
+
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+}
+
+group = 'io.github.jochyoua'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "spigotmc-repo"
+        url = 'https://hub.spigotmc.org/nexus/content/groups/public/'
+    }
+    maven {
+        name = "sonatype"
+        url = "https://oss.sonatype.org/content/groups/public/"
+    }
+    maven {
+        name = "CoreProtect"
+        url = "https://maven.playpro.com/"
+    }
+    maven {
+        url = 'https://repo.extendedclip.com/releases/'
+    }
+    maven {
+        name = "jeff-media"
+        url = "https://maven.paulem.net/releases"
+    }
+}
+
+
+dependencies {
+    implementation 'org.bstats:bstats-bukkit:3.0.0'
+    implementation "com.jeff_media:SpigotUpdateChecker:3.0.4"
+
+    compileOnly 'org.spigotmc:spigot-api:1.20.2-R0.1-SNAPSHOT'
+    compileOnly "net.coreprotect:coreprotect:22.4"
+    compileOnly 'me.clip:placeholderapi:2.12.3'
+
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+}
+
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release.set(11)
+}
+
+processResources {
+    def props = [version: version]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+}
+
+shadowJar {
+    relocate 'org.bstats', 'io.github.jochyoua.autoroot.bstats'
+    relocate("com.jeff_media", "io.github.jochyoua.autoroot.jeff_media")
+    archiveBaseName.set("AutoRoot")
+    archiveClassifier.set("")
+    destinationDirectory.set(
+            layout.buildDirectory.dir("../server/plugins")
+    )
+}

@@ -1,0 +1,26 @@
+name: AutoRoot
+version: '${version}'
+authors: [Jochyoua]
+main: io.github.jochyoua.autoroot.AutoRoot
+api-version: '1.13'
+softdepend: [CoreProtect, PlaceholderAPI]
+
+commands:
+  autoroot:
+    description: AutoRoot commands
+    usage: /<command>
+    permission: autoroot.usage
+
+permissions:
+  autoroot.usage:
+    description: Allows the user to see command usage
+    default: true
+  autoroot.admin:
+    description: Allows use of MOST commands in AutoRoot
+    default: op
+  autoroot.version:
+    description: Permission to use the version command
+    default: true
+  autoroot.checkupdate:
+    description: Permission to check for updates
+    default: op
