@@ -155,7 +155,7 @@ plantables:
     enable_falling_seeds: true        # Spruce leaves will drop seeds naturally.
 
   JUNGLE_SAPLING:
-    items: [JUNGLE_SAPLING]           # Dropping a jungle sapling triggers a jungle tree.
+    items: [JUNGLE_SAPLING, COCOA_BEANS] # Dropping a jungle sapling or cocoa beans triggers a jungle tree.
     valid_blocks: []                  # Inherits defaults.
     plant_chance: 0.80                # 80% chance to plant.
     enable_falling_seeds: true        # Jungle leaves will drop seeds naturally.

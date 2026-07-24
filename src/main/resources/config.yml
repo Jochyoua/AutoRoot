@@ -86,7 +86,7 @@ plantables:
     enable_falling_seeds: true
 
   JUNGLE_SAPLING:
-    items: [ JUNGLE_SAPLING ]
+    items: [ JUNGLE_SAPLING, COCOA_BEANS ]
     valid_blocks: [ ]
     plant_chance: 0.80
     enable_falling_seeds: true
