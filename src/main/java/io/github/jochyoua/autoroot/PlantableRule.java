@@ -3,7 +3,10 @@ package io.github.jochyoua.autoroot;
 import io.github.jochyoua.autoroot.services.ConfigService;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.Tag;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
@@ -13,6 +16,7 @@ import java.util.Set;
 
 @Getter
 @Builder
+@ToString
 public final class PlantableRule {
 
     private final Material plantBlock;
@@ -23,20 +27,10 @@ public final class PlantableRule {
     private final boolean enableFallingSeeds;
     private final Set<String> commandsToExecute;
     private final boolean destoryItemsOnFailure;
-
-    @Override
-    public String toString() {
-        return "PlantableRule{" +
-                "plantBlock=" + plantBlock +
-                ", triggerItems=" + triggerItems +
-                ", validBlocksBelow=" + validBlocksBelow +
-                ", whitelistedBiomes=" + whitelistedBiomes +
-                ", plantChance=" + plantChance +
-                ", enableFallingSeeds=" + enableFallingSeeds +
-                ", commandsToExecute=" + commandsToExecute +
-                ", destroyItemsOnFailure=" + destoryItemsOnFailure +
-                '}';
-    }
+    private final Set<Particle> successParticles;
+    private final Set<Particle> failureParticles;
+    private final Set<Sound> successSounds;
+    private final Set<Sound> failureSounds;
 
     public boolean isBiomeAllowed(Block soil) {
         Set<Biome> biomeSet = getWhitelistedBiomes();
