@@ -89,6 +89,7 @@ falling_seeds:
   max_seed_fall_weight: 1000           # The maximum denominator for the drop calculation (Chance is 15 out of 1000).
   max_seeds_per_cycle: 32              # Hard limit on how many seeds can drop globally in a single scan cycle.
   max_chunks_per_cycle_per_player: 10  # Maximum number of chunks to scan around each online player per cycle.
+  chunk_leaf_density_limit: 100        # If reached, falling seeds will stop generating in chunks that have more than 100 leaves.
   consume_leaf_on_seed_spawn: true     # If true, the leaf block is broken/consumed when it drops a seed.
   minimum_canopy: 2                    # Prevents trees from going completely bald by leaving a tiny bit of foliage intact.
 

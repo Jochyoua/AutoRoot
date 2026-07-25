@@ -16,6 +16,7 @@ falling_seeds:
   max_seed_fall_weight: 1000
   max_seeds_per_cycle: 32
   max_chunks_per_cycle_per_player: 10
+  chunk_leaf_density_limit: 100
   consume_leaf_on_seed_spawn: true
   minimum_canopy: 2
 

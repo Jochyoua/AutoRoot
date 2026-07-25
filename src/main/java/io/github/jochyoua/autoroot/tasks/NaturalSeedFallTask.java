@@ -134,6 +134,13 @@ public class NaturalSeedFallTask implements Runnable {
 
             if (leafCache.get(key).isEmpty()) continue;
 
+            if (leafCache.get(key).size() > config.getChunkLeafDensityLimit()) {
+                plugin.debugMessage("Too many leaves in chunk: "
+                        + leafCache.get(key).size() + "/" + config.getChunkLeafDensityLimit());
+                leafCache.get(key).clear();
+                continue;
+            }
+
             processed++;
             startAsyncChunkProcessing(chunk);
         }

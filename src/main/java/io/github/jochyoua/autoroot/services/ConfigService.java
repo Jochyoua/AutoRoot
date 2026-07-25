@@ -58,6 +58,7 @@ public final class ConfigService {
     private Set<Particle>  defaultFailureParticles;
     private Set<Sound> defaultSuccessSounds;
     private Set<Sound>  defaultFailureSounds;
+    private long chunkLeafDensityLimit;
 
     public ConfigService(AutoRoot plugin) {
         this.plugin = plugin;
@@ -117,6 +118,7 @@ public final class ConfigService {
 
         maxSeedsPerCycle = cfg.getInt("falling_seeds.max_seeds_per_cycle", 32);
         maxChunksPerCyclePerPlayer = cfg.getInt("falling_seeds.max_chunks_per_cycle_per_player", 10);
+        chunkLeafDensityLimit = cfg.getLong("falling_seeds.chunk_leaf_density_limit", 100);
         leafCacheDynamicScalingEnabled = cfg.getBoolean("falling_seeds.leaf_cache.dynamic_scaling_enabled", true);
         leafCacheBaseLifespanMs = cfg.getLong("falling_seeds.leaf_cache.base_lifespan_ms", 60000L);
         leafCacheMinLifespanMs = cfg.getLong("falling_seeds.leaf_cache.min_lifespan_ms", 10000L);
