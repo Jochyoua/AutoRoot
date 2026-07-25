@@ -57,8 +57,6 @@ public class ChunkScanningListener implements Listener {
         int chunkX = chunk.getX();
         int chunkZ = chunk.getZ();
 
-        int radius = plugin.getServer().getSimulationDistance();
-
         for (Player player : chunk.getWorld().getPlayers()) {
             Chunk pc = player.getLocation().getChunk();
 
@@ -68,7 +66,7 @@ public class ChunkScanningListener implements Listener {
             int dx = Math.abs(px - chunkX);
             int dz = Math.abs(pz - chunkZ);
 
-            if (dx <= radius && dz <= radius) {
+            if (dx <= 10 && dz <= 10) {
                 return true;
             }
         }
