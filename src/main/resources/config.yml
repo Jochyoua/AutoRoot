@@ -43,13 +43,20 @@ ignore_vegetation:
     - sweet_berry_bush
     - red_mushroom
     - brown_mushroom
+    - snow
 
 defaults:
   plant_chance: 0.75
   valid_blocks: [ DIRT, GRASS_BLOCK, PODZOL, COARSE_DIRT, MUD ]
   biome_whitelist: [ ]
+  commands: [ ]
   enable_falling_seeds: false # Only works for TREES.
   destroy_item_on_failure: false
+  success_particles: [ VILLAGER_HAPPY, HEART, BLOCK_CRACK, ITEM_CRACK ]
+  failure_particles: [ SMOKE_NORMAL, CLOUD, BLOCK_CRACK, ITEM_CRACK ]
+
+  success_sound: [ LEVEL_UP, NOTE_PLING ]
+  failure_sound: [ DIG_WOOD, DIG_GRASS ]
 
 plantables:
 

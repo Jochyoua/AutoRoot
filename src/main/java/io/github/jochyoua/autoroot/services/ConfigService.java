@@ -3,10 +3,7 @@ package io.github.jochyoua.autoroot.services;
 import io.github.jochyoua.autoroot.AutoRoot;
 import io.github.jochyoua.autoroot.PlantableRule;
 import lombok.Getter;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Tag;
+import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -25,6 +22,7 @@ public final class ConfigService {
     private final Map<Material, List<PlantableRule>> plantablesByItem = new EnumMap<>(Material.class);
     private final Set<Material> ignoredVegetationBlocks = new HashSet<>();
     private final Set<Tag<Material>> ignoredVegetationTags = new HashSet<>();
+    private Set<String> defaultCommands = new HashSet<>();
     private final List<String> defaultValidBlocks = new ArrayList<>();
     private int delayTicks;
     private int scanTicks;
@@ -56,6 +54,10 @@ public final class ConfigService {
     private int maxSeedFallWeight;
     private boolean enableCoreprotect;
     private boolean defaultDestroyItemOnFailure;
+    private Set<Particle> defaultSuccessParticles;
+    private Set<Particle>  defaultFailureParticles;
+    private Set<Sound> defaultSuccessSounds;
+    private Set<Sound>  defaultFailureSounds;
 
     public ConfigService(AutoRoot plugin) {
         this.plugin = plugin;
@@ -131,6 +133,11 @@ public final class ConfigService {
         defaultValidBlocks.addAll(cfg.getStringList("defaults.valid_blocks"));
         defaultEnableFallingSeeds = cfg.getBoolean("defaults.enable_falling_seeds", false);
         defaultDestroyItemOnFailure = cfg.getBoolean("defaults.destroy_item_on_failure", false);
+        defaultSuccessParticles = parseEnum(Particle.class, cfg.getStringList("defaults.success_particles"));
+        defaultFailureParticles = parseEnum(Particle.class, cfg.getStringList("defaults.failure_particles"));
+        defaultSuccessSounds = parseEnum(Sound.class, cfg.getStringList("defaults.success_sounds"));
+        defaultFailureSounds = parseEnum(Sound.class, cfg.getStringList("defaults.failure_sounds"));
+        defaultCommands.addAll(cfg.getStringList("defaults.commands"));
     }
 
     private void loadIgnoreVegetation(FileConfiguration cfg) {
@@ -230,7 +237,39 @@ public final class ConfigService {
             boolean enableFallingSeeds = cfg.getBoolean(base + ".enable_falling_seeds", defaultEnableFallingSeeds);
             boolean destroyItemOnFailure = cfg.getBoolean(base + ".destroy_item_on_failure", defaultDestroyItemOnFailure);
 
-            Set<String> commandsToExecute = loadCommands(cfg.getStringList(base + ".commands"));
+            Set<String> commandsToExecute;
+            if(cfg.isSet(base + ".commands")){
+                commandsToExecute = new HashSet<>(cfg.getStringList(base + ".commands"));
+            }else {
+                commandsToExecute = defaultCommands;
+            }
+            Set<Particle> successParticles;
+            if (!cfg.isSet(base + ".success_particles")) {
+                successParticles = defaultSuccessParticles;
+            } else {
+                successParticles = parseEnum(Particle.class, cfg.getStringList(base + ".success_particles"));
+            }
+
+            Set<Particle> failureParticles;
+            if (!cfg.isSet(base + ".failure_particles")) {
+                failureParticles = defaultFailureParticles;
+            } else {
+                failureParticles = parseEnum(Particle.class, cfg.getStringList(base + ".failure_particles"));
+            }
+
+            Set<Sound> successSounds;
+            if (!cfg.isSet(base + ".success_sounds")) {
+                successSounds = defaultSuccessSounds;
+            } else {
+                successSounds = parseEnum(Sound.class, cfg.getStringList(base + ".success_sounds"));
+            }
+
+            Set<Sound> failureSounds;
+            if (!cfg.isSet(base + ".failure_sounds")) {
+                failureSounds = defaultFailureSounds;
+            } else {
+                failureSounds = parseEnum(Sound.class, cfg.getStringList(base + ".failure_sounds"));
+            }
 
 
             PlantableRule rule = PlantableRule.builder()
@@ -240,8 +279,12 @@ public final class ConfigService {
                     .plantChance(chance)
                     .whitelistedBiomes(validBiomes)
                     .enableFallingSeeds(enableFallingSeeds)
-                    .commandsToExecute(commandsToExecute)
+                    .commandsToExecute(loadCommands(commandsToExecute))
                     .destoryItemsOnFailure(destroyItemOnFailure)
+                    .successParticles(successParticles)
+                    .failureParticles(failureParticles)
+                    .successSounds(successSounds)
+                    .failureSounds(failureSounds)
                     .build();
 
             plantablesByBlock.put(block, rule);
@@ -252,7 +295,26 @@ public final class ConfigService {
         }
     }
 
-    private Set<String> loadCommands(List<String> stringList) {
+    private <T extends Enum<T>> Set<T> parseEnum(Class<T> type, List<String> list) {
+        Set<T> result = new HashSet<>();
+
+        for (String raw : list) {
+            try {
+                T value = Enum.valueOf(type, raw.trim().toUpperCase());
+                result.add(value);
+            } catch (IllegalArgumentException ex) {
+                plugin.getLogger().log(
+                        Level.WARNING,
+                        "Invalid {0}: {1}",
+                        new Object[]{ type.getSimpleName(), raw }
+                );
+            }
+        }
+
+        return result;
+    }
+
+    private Set<String> loadCommands(Set<String> stringList) {
         if (stringList == null || stringList.isEmpty()) {
             return Collections.emptySet();
         }
