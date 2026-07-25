@@ -11,6 +11,7 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -86,7 +87,7 @@ public class PlantingService {
         }
 
         if (!rule.passesChance(plugin.randomDouble(), config.getDefaultPlantChance())) {
-            playFailureEffects(target);
+            playFailureEffects(target, rule);
             if (rule.isDestoryItemsOnFailure()) {
                 removeOrDecreaseItem(item);
             }
@@ -98,7 +99,7 @@ public class PlantingService {
         }
 
         if (!tryPlant(item, rule, target)) {
-            playFailureEffects(target);
+            playFailureEffects(target, rule);
         }
     }
 
@@ -248,7 +249,7 @@ public class PlantingService {
 
             removeOrDecreaseItem(item);
 
-            playSuccessEffects(target);
+            playSuccessEffects(target, rule);
             return true;
         } catch (Exception ex) {
             plugin.getLogger().log(Level.WARNING, String.format("Failed setting block for planting: %s", rule.getPlantBlock()), ex);
@@ -266,39 +267,87 @@ public class PlantingService {
         }
     }
 
-    private void playFailureEffects(Block target) {
+    private void playFailureEffects(Block target, PlantableRule rule) {
         World world = target.getWorld();
         Location center = target.getLocation().add(0.5, 0.5, 0.5);
 
         if (config.isEnableParticles()) {
-            world.spawnParticle(Particle.ASH, center, 12, 0.25, 0.25, 0.25, 0.01);
-            world.spawnParticle(Particle.SMOKE_NORMAL, center, 8, 0.2, 0.2, 0.2, 0.03);
-
-            Material dirtType = target.getType().isAir() ? Material.DIRT : target.getType();
-            world.spawnParticle(Particle.BLOCK_CRACK, center, 10, 0.2, 0.1, 0.2, 0.05, dirtType.createBlockData());
+            for (Particle particle : rule.getFailureParticles()) {
+                spawnParticle(center, particle);
+            }
         }
 
         if (config.isEnableSound()) {
-            world.playSound(center, Sound.BLOCK_WOOD_BREAK, 0.5f, 0.6f);
-            world.playSound(center, Sound.BLOCK_ROOTED_DIRT_BREAK, 0.7f, 0.8f);
+            for (Sound sound : rule.getFailureSounds()) {
+                world.playSound(center, sound, 0.8f, 0.9f);
+            }
         }
     }
 
-    private void playSuccessEffects(Block target) {
+    private void playSuccessEffects(Block target, PlantableRule rule) {
         World world = target.getWorld();
         Location center = target.getLocation().add(0.5, 0.5, 0.5);
 
         if (config.isEnableParticles()) {
-            world.spawnParticle(Particle.VILLAGER_HAPPY, center, 8, 0.2, 0.2, 0.2, 0.02);
-
-            world.spawnParticle(Particle.COMPOSTER, center, 6, 0.15, 0.2, 0.15, 0.05);
-
-            world.spawnParticle(Particle.BLOCK_CRACK, center.clone().add(0, 0.2, 0), 6, 0.1, 0.1, 0.1, 0.02, Material.OAK_LEAVES.createBlockData());
+            for (Particle particle : rule.getSuccessParticles()) {
+                spawnParticle(center, particle);
+            }
         }
 
         if (config.isEnableSound()) {
-            world.playSound(center, Sound.ITEM_BONE_MEAL_USE, 0.8f, 1.1f);
-            world.playSound(center, Sound.BLOCK_AZALEA_LEAVES_PLACE, 0.7f, 1.3f);
+            for (Sound sound : rule.getSuccessSounds()) {
+                world.playSound(center, sound, 0.8f, 1.1f);
+            }
+        }
+    }
+
+    private void spawnParticle(Location location, Particle particle) {
+        Class<?> type = particle.getDataType();
+        World world = location.getWorld();
+        if (world == null) {
+            plugin.debugMessage("World is null. Failed to spawn particle " + particle);
+            return;
+        }
+
+        try {
+            if (type == Void.class) {
+                world.spawnParticle(particle, location, 8, 0.2, 0.2, 0.2, 0.02);
+                return;
+            }
+
+            if (type == BlockData.class) {
+                BlockData data = Bukkit.createBlockData(Material.STONE);
+                world.spawnParticle(particle, location, 8, 0.2, 0.2, 0.2, 0.02, data);
+                return;
+            }
+
+            if (type == ItemStack.class) {
+                ItemStack item = new ItemStack(Material.WHEAT);
+                world.spawnParticle(particle, location, 8, 0.2, 0.2, 0.2, 0.02, item);
+                return;
+            }
+
+            if (type == Particle.DustOptions.class) {
+                Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(255, 255, 255), 1.0f);
+                world.spawnParticle(particle, location, 8, 0.2, 0.2, 0.2, 0.02, dust);
+                return;
+            }
+
+            if (type == Particle.DustTransition.class) {
+                Particle.DustTransition transition = new Particle.DustTransition(
+                        Color.fromRGB(255, 255, 255),
+                        Color.fromRGB(0, 255, 0),
+                        1.0f
+                );
+                world.spawnParticle(particle, location, 8, 0.2, 0.2, 0.2, 0.02, transition);
+                return;
+            }
+
+            plugin.debugMessage("Skipping particle " + particle + " because its data type " + type.getName() + " is unhandled.");
+
+        } catch (Exception ex) {
+            plugin.getLogger().log(Level.WARNING, "Failed to spawn particle " + particle, ex);
         }
     }
 }
+
