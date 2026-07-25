@@ -1,4 +1,4 @@
-![AutoRoot Banner](https://files.catbox.moe/dgwkko.png)
+![AutoRoot Banner](https://jochyoua.github.io/assets/resources/AutoRoot.png)
 # AutoRoot 🌱
 
 [![GitHub](https://img.shields.io/github/license/Jochyoua/AutoRoot?style=plastic)](https://github.com/Jochyoua/AutoRoot/blob/main/LICENSE) [![GitHub last commit](https://img.shields.io/github/last-commit/Jochyoua/AutoRoot?style=plastic)](https://github.com/Jochyoua/AutoRoot/commits/) [![Github Release](https://img.shields.io/github/v/release/Jochyoua/AutoRoot?style=plastic)](https://github.com/Jochyoua/AutoRoot/releases/latest)
@@ -57,6 +57,12 @@
 
 AutoRoot is incredibly easy to configure. You can adjust drop chances, wind strengths, and allowed dirt types for every
 single plant on your server.
+
+## 🌿 Test Server — server.J5568.dev
+
+A lightweight environment for plugin testing and world‑growth simulation.  
+Players are randomly teleported on every join to ensure fresh terrain and unbiased testing conditions.
+
 
 > [!IMPORTANT]  
 > Click the dropdown below to see the complete, fully-commented default configuration file!
