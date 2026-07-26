@@ -65,7 +65,7 @@ public final class AutoRoot extends JavaPlugin {
             startPlantingTask();
         }
 
-        this.chunkScanningListener = new ChunkScanningListener(this);
+        this.chunkScanningListener = new ChunkScanningListener(this, configService);
         getServer().getPluginManager().registerEvents(chunkScanningListener, this);
 
         startNaturalSeedFallTask();
