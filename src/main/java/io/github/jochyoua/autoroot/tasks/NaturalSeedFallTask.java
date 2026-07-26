@@ -6,10 +6,7 @@ import io.github.jochyoua.autoroot.PlantableRule;
 import io.github.jochyoua.autoroot.enums.LeafFailReasonEnum;
 import io.github.jochyoua.autoroot.services.ConfigService;
 import lombok.Getter;
-import org.bukkit.Bukkit;
-import org.bukkit.Chunk;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.type.Leaves;
@@ -21,6 +18,7 @@ import org.bukkit.util.Vector;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+
 
 
 public class NaturalSeedFallTask implements Runnable {
@@ -72,7 +70,9 @@ public class NaturalSeedFallTask implements Runnable {
         }
 
         if (now - lastLeafCacheReset >= cacheLifespan) {
-            plugin.debugMessage("Leaf Cache reset after " + cacheLifespan + "ms (" + playerSize + " players)");
+            if(playerSize != 0) {
+                plugin.debugMessage("Leaf Cache reset after " + cacheLifespan + "ms (" + playerSize + " players)");
+            }
             leafCache.clear();
             lastLeafCacheReset = now;
         }
@@ -283,6 +283,7 @@ public class NaturalSeedFallTask implements Runnable {
                 for (int y = minY; y <= maxY; y++) {
 
                     Block block = chunk.getBlock(x, y, z);
+
                     if (!(block.getBlockData() instanceof Leaves)) continue;
 
                     Leaves data = (Leaves) block.getBlockData();
