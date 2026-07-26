@@ -18,11 +18,13 @@ import java.util.Set;
 
 public class ChunkScanningListener implements Listener {
     private final AutoRoot plugin;
+    private final ConfigService config;
     @Getter
     private final Set<Long> staleChunkCache = new HashSet<>();
 
-    public ChunkScanningListener(AutoRoot plugin) {
+    public ChunkScanningListener(AutoRoot plugin, ConfigService configService) {
         this.plugin = plugin;
+        this.config = configService;
     }
 
     @EventHandler
@@ -51,6 +53,11 @@ public class ChunkScanningListener implements Listener {
         Chunk chunk = event.getChunk();
         long key = task.convertChunkKey(chunk.getX(), chunk.getZ());
         staleChunkCache.remove(key);
+
+        if(!config.isFallingSeedsEnabled()){
+            task.getLeafCache().remove(key);
+            plugin.debugMessage("Falling seeds is disabled. Clearing caches manually for chunk " + key + ".");
+        }
     }
 
     private boolean isChunkNearAnyPlayer(Chunk chunk) {
