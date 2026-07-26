@@ -141,6 +141,7 @@ public final class ConfigService {
         defaultFailureParticles = parseEnum(Particle.class, cfg.getStringList("defaults.failure_particles"));
         defaultSuccessSounds = parseEnum(Sound.class, cfg.getStringList("defaults.success_sounds"));
         defaultFailureSounds = parseEnum(Sound.class, cfg.getStringList("defaults.failure_sounds"));
+        defaultCommands.clear();
         defaultCommands.addAll(cfg.getStringList("defaults.commands"));
     }
 
