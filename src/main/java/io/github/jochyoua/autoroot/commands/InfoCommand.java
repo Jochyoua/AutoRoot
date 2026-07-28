@@ -1,16 +1,20 @@
 package io.github.jochyoua.autoroot.commands;
 
 import io.github.jochyoua.autoroot.AutoRoot;
-import io.github.jochyoua.autoroot.PlantableRule;
+import io.github.jochyoua.autoroot.data.PlantableRule;
 import io.github.jochyoua.autoroot.services.ConfigService;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 public class InfoCommand implements SubCommand {
@@ -44,7 +48,7 @@ public class InfoCommand implements SubCommand {
     private String getOverallMetrics() {
         boolean enabled = plugin.isEnableFunctionality();
         int ruleCount = config.getPlantablesByBlock().size();
-        int activeLeafCache = plugin.getNaturalSeedFallTask().getLeafCache().size();
+        int activeLeafCache = plugin.getNaturalSeedFallTask().getChunkCache().size();
         int staleChunks = plugin.getChunkScanningListener().getStaleChunkCache().size();
         int queueSize = plugin.getPlantingService().getQueue().size();
         int fallingSeedsSize = plugin.getNaturalSeedFallTask().getNaturalSeeds().size();
@@ -56,7 +60,7 @@ public class InfoCommand implements SubCommand {
                 "&6Metrics:\n" +
                 " &7• &eActive Rules: &b" + ruleCount + "\n" +
                 " &7• &ePlanting Queue: &b" + queueSize + "\n" +
-                " &7• &eLeaf Chunks: &b" + activeLeafCache + "\n" +
+                " &7• &eCached Chunks: &b" + activeLeafCache + "\n" +
                 " &7• &eFalling Seeds: &b" + fallingSeedsSize + "\n" +
                 " &7• &eStale Chunks: &b" + staleChunks + "\n\n" +
                 "&7&oWant plantable rule details? Try &f/autoroot info <material>&7&o!\n" +
@@ -67,11 +71,15 @@ public class InfoCommand implements SubCommand {
         if (!(sender instanceof Player)) {
             return SubCommand.colorString("&cSimulation requires a player.");
         }
-        Player player = (Player)sender;
+        Player player = (Player) sender;
 
         Block blockBelow = player.getLocation().getBlock().getRelative(0, -1, 0);
         Block blockAtFeet = player.getLocation().getBlock();
         Biome biome = blockBelow.getBiome();
+        World world = blockBelow.getWorld();
+
+        boolean worldAllowed = !rule.getWorldBlacklist().contains(world.getUID()) &&
+                    (rule.getWorldWhitelist().isEmpty() || rule.getWorldWhitelist().contains(world.getUID()));
 
         boolean biomeAllowed = rule.getWhitelistedBiomes().isEmpty()
                 || rule.getWhitelistedBiomes().contains(biome);
@@ -81,8 +89,9 @@ public class InfoCommand implements SubCommand {
 
         boolean airOrVegetation = rule.isAirOrVegetation(blockAtFeet, config);
 
-        boolean finalResult = biomeAllowed && validBelow && airOrVegetation;
+        boolean finalResult = biomeAllowed && worldAllowed && validBelow && airOrVegetation;
 
+        String worldStatus = worldAllowed ? "&a(OK)" : "&c(Not Allowed)";
         String biomeStatus = biomeAllowed ? "&a(OK)" : "&c(Not Allowed)";
         String blockBelowStatus = validBelow ? "&a(OK)" : "&c(Invalid)";
         String feetStatus = airOrVegetation ? "&a(OK)" : "&c(Blocked)";
@@ -92,6 +101,7 @@ public class InfoCommand implements SubCommand {
 
         String message = SubCommand.buildHeader("AutoRoot Planting Simulation") + "\n" +
                 "&eBiome: &f" + biome.name() + " " + biomeStatus + "\n" +
+                "&eWorld: &f" + world.getName() + " " + worldStatus + "\n" +
                 "&eBlock Below: &f" + blockBelow.getType().name() + " " + blockBelowStatus + "\n" +
                 "&eFeet Block: &f" + blockAtFeet.getType().name() + " " + feetStatus + "\n" +
                 "&eChance: &f" + Math.round(rule.getPlantChance() * 100) + "%\n" +
