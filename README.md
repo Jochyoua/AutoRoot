@@ -120,12 +120,12 @@ ignore_vegetation:
     - brown_mushroom
 
 defaults:
+  is_enabled: true                    # The option to disable or enable each different plantable
   plant_chance: 0.75                  # Global default chance (75%) for a dropped item to successfully root.
   valid_blocks: [DIRT, GRASS_BLOCK, PODZOL, COARSE_DIRT, MUD] # Global default soil types.
   biome_whitelist: []                 # Global default biome restrictions (empty = allowed in all biomes).
   enable_falling_seeds: false         # Global default for whether plants can drop from leaves (Only works for TREES).
   destroy_item_on_failure: false      # We don't want to destroy their seeds, do we?
-  is_enabled: true                    # The option to disable or enable each different plantable
 
 plantables:
 

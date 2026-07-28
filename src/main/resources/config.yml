@@ -48,6 +48,7 @@ ignore_vegetation:
     - snow
 
 defaults:
+  is_enabled: true
   plant_chance: 0.75
   valid_blocks: [ DIRT, GRASS_BLOCK, PODZOL, COARSE_DIRT, MUD ]
   biome_whitelist: [ ]
@@ -73,7 +74,6 @@ plantables:
       - 'minecraft:tellraw %nearest_player_name% "&e[AutoRoot] &7I hope the trade-off was worth the exchange!"'
       - '[randomEntry] minecraft:give %nearest_player_name% emerald 1 | minecraft:give %nearest_player_name% gold_ingot 1'
     destroy_item_on_failure: true
-    is_enabled: true
 
   # --- TREES ---
 
