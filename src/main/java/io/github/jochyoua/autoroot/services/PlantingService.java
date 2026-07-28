@@ -2,7 +2,8 @@ package io.github.jochyoua.autoroot.services;
 
 import io.github.jochyoua.autoroot.AutoRoot;
 import io.github.jochyoua.autoroot.PlantQueue;
-import io.github.jochyoua.autoroot.PlantableRule;
+import io.github.jochyoua.autoroot.data.ChunkInfo;
+import io.github.jochyoua.autoroot.data.PlantableRule;
 import io.github.jochyoua.autoroot.commands.SubCommand;
 import lombok.Getter;
 import me.clip.placeholderapi.PlaceholderAPI;
@@ -110,8 +111,9 @@ public class PlantingService {
         if (!rule.isAirOrVegetation(target, config)) {
             return;
         }
-
-        if (isSaplingDensityExceeded(loc.getChunk(), config.getChunkSaplingDensityLimit())) {
+        long chunkKey = ChunkInfo.convertKey(soil.getChunk());
+        ChunkInfo chunkInfo = plugin.getNaturalSeedFallTask().getChunkCache().computeIfAbsent(chunkKey, k -> plugin.getNaturalSeedFallTask().scanChunk(soil.getChunk()));
+        if (chunkInfo != null && chunkInfo.getPlantedSaplings() >= config.getChunkSaplingDensityLimit()) {
             plugin.debugMessage("Chunk sapling density is too high! Bypassing planting.");
             playFailureEffects(target, rule);
             return;
@@ -119,6 +121,10 @@ public class PlantingService {
 
         if (!tryPlant(item, rule, target)) {
             playFailureEffects(target, rule);
+        } else {
+            if(chunkInfo != null) {
+                chunkInfo.incrementSaplings();
+            }
         }
     }
 
@@ -300,34 +306,6 @@ public class PlantingService {
             plugin.getLogger().log(Level.WARNING, String.format("Failed setting block for planting: %s", rule.getPlantBlock()), ex);
             return false;
         }
-    }
-
-
-    private boolean isSaplingDensityExceeded(Chunk chunk, long limit) {
-        World world = chunk.getWorld();
-        int minY = world.getMinHeight();
-        int maxY = world.getMaxHeight();
-
-        int count = 0;
-
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-                for (int y = minY; y < maxY; y++) {
-
-                    Material type = chunk.getBlock(x, y, z).getType();
-
-                    if (Tag.SAPLINGS.isTagged(type)) {
-                        count++;
-
-                        if (count >= limit) {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-
-        return false;
     }
 
     private void removeOrDecreaseItem(Item item) {
