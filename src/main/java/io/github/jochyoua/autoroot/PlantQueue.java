@@ -1,5 +1,6 @@
 package io.github.jochyoua.autoroot;
 
+import io.github.jochyoua.autoroot.data.PlantableRule;
 import lombok.Getter;
 import org.bukkit.entity.Item;
 

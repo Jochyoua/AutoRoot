@@ -1,6 +1,6 @@
 package io.github.jochyoua.autoroot.commands;
 
-import io.github.jochyoua.autoroot.PlantableRule;
+import io.github.jochyoua.autoroot.data.PlantableRule;
 import io.github.jochyoua.autoroot.services.ConfigService;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;

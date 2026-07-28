@@ -1,7 +1,8 @@
 package io.github.jochyoua.autoroot.listeners;
 
 import io.github.jochyoua.autoroot.AutoRoot;
-import io.github.jochyoua.autoroot.LeafInfo;
+import io.github.jochyoua.autoroot.data.ChunkInfo;
+import io.github.jochyoua.autoroot.data.LeafInfo;
 import io.github.jochyoua.autoroot.services.ConfigService;
 import io.github.jochyoua.autoroot.tasks.NaturalSeedFallTask;
 import lombok.Getter;
@@ -13,14 +14,14 @@ import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ChunkScanningListener implements Listener {
     private final AutoRoot plugin;
     private final ConfigService config;
     @Getter
-    private final Set<Long> staleChunkCache = new HashSet<>();
+    private final Set<Long> staleChunkCache = ConcurrentHashMap.newKeySet();
 
     public ChunkScanningListener(AutoRoot plugin, ConfigService configService) {
         this.plugin = plugin;
@@ -37,12 +38,11 @@ public class ChunkScanningListener implements Listener {
             return;
         }
 
-        long key = task.convertChunkKey(chunk.getX(), chunk.getZ());
+        long key = ChunkInfo.convertKey(chunk);
 
-        if (task.getLeafCache().containsKey(key) || staleChunkCache.contains(key)) return;
+        if (staleChunkCache.contains(key)) return;
 
-        List<LeafInfo> leaves = task.scanChunkLeaves(chunk);
-        task.getLeafCache().put(key, leaves);
+        task.getChunkCache().computeIfAbsent(key, k -> task.scanChunk(chunk));
         staleChunkCache.add(key);
     }
 
@@ -51,13 +51,9 @@ public class ChunkScanningListener implements Listener {
         if(!plugin.isEnableFunctionality()) return;
         NaturalSeedFallTask task = plugin.getNaturalSeedFallTask();
         Chunk chunk = event.getChunk();
-        long key = task.convertChunkKey(chunk.getX(), chunk.getZ());
+        long key = ChunkInfo.convertKey(chunk);
         staleChunkCache.remove(key);
-
-        if(!config.isFallingSeedsEnabled()){
-            task.getLeafCache().remove(key);
-            plugin.debugMessage("Falling seeds is disabled. Clearing caches manually for chunk " + key + ".");
-        }
+        task.getChunkCache().remove(key);
     }
 
     private boolean isChunkNearAnyPlayer(Chunk chunk) {

@@ -1,8 +1,7 @@
 package io.github.jochyoua.autoroot.services;
 
-import com.google.common.util.concurrent.AtomicLongMap;
 import io.github.jochyoua.autoroot.AutoRoot;
-import io.github.jochyoua.autoroot.PlantableRule;
+import io.github.jochyoua.autoroot.data.PlantableRule;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Biome;

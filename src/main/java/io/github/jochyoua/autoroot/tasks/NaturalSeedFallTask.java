@@ -1,8 +1,9 @@
 package io.github.jochyoua.autoroot.tasks;
 
 import io.github.jochyoua.autoroot.AutoRoot;
-import io.github.jochyoua.autoroot.LeafInfo;
-import io.github.jochyoua.autoroot.PlantableRule;
+import io.github.jochyoua.autoroot.data.ChunkInfo;
+import io.github.jochyoua.autoroot.data.LeafInfo;
+import io.github.jochyoua.autoroot.data.PlantableRule;
 import io.github.jochyoua.autoroot.enums.LeafFailReasonEnum;
 import io.github.jochyoua.autoroot.services.ConfigService;
 import lombok.Getter;
@@ -17,6 +18,7 @@ import org.bukkit.util.Vector;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
 
@@ -26,7 +28,7 @@ public class NaturalSeedFallTask implements Runnable {
     private final AutoRoot plugin;
     private final ConfigService config;
     @Getter
-    private final Map<Long, List<LeafInfo>> leafCache = new ConcurrentHashMap<>();
+    private final Map<Long, ChunkInfo> chunkCache = new ConcurrentHashMap<>();
     @Getter
     private final Set<Item> naturalSeeds = new HashSet<>();
     private long lastCycle = System.currentTimeMillis();
@@ -43,7 +45,7 @@ public class NaturalSeedFallTask implements Runnable {
     }
 
     public void resetCaches() {
-        leafCache.clear();
+        chunkCache.clear();
         naturalSeeds.clear();
     }
 
@@ -73,7 +75,7 @@ public class NaturalSeedFallTask implements Runnable {
             if(playerSize != 0) {
                 plugin.debugMessage("Leaf Cache reset after " + cacheLifespan + "ms (" + playerSize + " players)");
             }
-            leafCache.clear();
+            chunkCache.clear();
             lastLeafCacheReset = now;
         }
 
@@ -125,19 +127,19 @@ public class NaturalSeedFallTask implements Runnable {
                 break;
             }
 
-            long key = convertChunkKey(chunk.getX(), chunk.getZ());
+            long key = ChunkInfo.convertKey(chunk);
 
-            if (!leafCache.containsKey(key)) {
-                leafCache.put(key, scanChunkLeaves(chunk));
+            if (!chunkCache.containsKey(key)) {
+                chunkCache.put(key, scanChunk(chunk));
                 continue;
             }
 
-            if (leafCache.get(key).isEmpty()) continue;
+            if (chunkCache.get(key).getLeavesInChunk().isEmpty()) continue;
 
-            if (leafCache.get(key).size() > config.getChunkLeafDensityLimit()) {
+            if (chunkCache.get(key).getLeavesInChunk().size() > config.getChunkLeafDensityLimit()) {
                 plugin.debugMessage("Too many leaves in chunk: "
-                        + leafCache.get(key).size() + "/" + config.getChunkLeafDensityLimit());
-                leafCache.get(key).clear();
+                        + chunkCache.get(key).getLeavesInChunk().size() + "/" + config.getChunkLeafDensityLimit());
+                chunkCache.get(key).getLeavesInChunk().clear();
                 continue;
             }
 
@@ -219,8 +221,8 @@ public class NaturalSeedFallTask implements Runnable {
 
     private Map<String, Object> evaluateChunkAsync(Chunk chunk) {
 
-        long key = convertChunkKey(chunk.getX(), chunk.getZ());
-        List<LeafInfo> leaves = leafCache.get(key);
+        long key = ChunkInfo.convertKey(chunk);
+        List<LeafInfo> leaves = chunkCache.get(key).getLeavesInChunk();
         if (leaves == null || leaves.isEmpty()) return Collections.emptyMap();
 
         LeafInfo leaf = pickRandomValidLeaf(leaves);
@@ -266,50 +268,66 @@ public class NaturalSeedFallTask implements Runnable {
     }
 
 
-    public List<LeafInfo> scanChunkLeaves(Chunk chunk) {
-        List<LeafInfo> list = new ArrayList<>();
+    public ChunkInfo scanChunk(Chunk chunk) {
+        long chunkKey = ChunkInfo.convertKey(chunk);
+        if(chunkCache.containsKey(chunkKey))
+            return chunkCache.get(ChunkInfo.convertKey(chunk));
+
+        List<LeafInfo> leaves = new CopyOnWriteArrayList<>();
         World world = chunk.getWorld();
 
         int worldMin = world.getMinHeight();
-        int worldMax = Math.min(world.getMaxHeight(), config.getMaxLeafScanHeight());
+        int worldMax = world.getMaxHeight();
+        int maxLeafScanHeight = Math.min(worldMax, config.getMaxLeafScanHeight());
+
+        int saplingCount = 0;
 
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
 
-                int highest = chunk.getWorld().getHighestBlockYAt(chunk.getBlock(x, 0, z).getLocation());
-                int minY = Math.max(highest - 20, worldMin);
-                int maxY = Math.min(highest + 8, worldMax);
+                int highest = world.getHighestBlockYAt((chunk.getX() << 4) + x, (chunk.getZ() << 4) + z);
 
-                for (int y = minY; y <= maxY; y++) {
+                int minLeafY = Math.max(highest - 20, worldMin);
+                int maxLeafY = Math.min(highest + 8, maxLeafScanHeight);
 
+                Block previousBlock = null;
+
+                for (int y = worldMin; y < worldMax; y++) {
                     Block block = chunk.getBlock(x, y, z);
+                    Material type = block.getType();
 
-                    if (!(block.getBlockData() instanceof Leaves)) continue;
+                    if (Tag.SAPLINGS.isTagged(type)) {
+                        saplingCount++;
+                    }
 
-                    Leaves data = (Leaves) block.getBlockData();
+                    if (y >= minLeafY && y <= maxLeafY) {
+                        if (block.getBlockData() instanceof Leaves) {
+                            Leaves data = (Leaves) block.getBlockData();
+                            boolean isExposedUnderneath = (y == worldMin) ||
+                                    (previousBlock != null && previousBlock.getType() == Material.AIR);
 
-                    if (y > worldMin && chunk.getBlock(x, y - 1, z).getType() != Material.AIR) continue;
+                            if (isExposedUnderneath) {
+                                leaves.add(new LeafInfo(
+                                        block,
+                                        type,
+                                        data.isPersistent(),
+                                        data.getDistance(),
+                                        block.getBiome()
+                                ));
+                            }
+                        }
+                    }
 
-                    Biome biome = block.getBiome();
-
-                    list.add(new LeafInfo(
-                            block,
-                            block.getType(),
-                            data.isPersistent(),
-                            data.getDistance(),
-                            biome
-                    ));
+                    previousBlock = block;
                 }
             }
         }
 
-        return list;
-    }
-
-
-
-    public long convertChunkKey(int x, int z) {
-        return (((long) x) << 32) ^ (z & 0xffffffffL);
+        return ChunkInfo.builder()
+                .chunkKey(chunkKey)
+                .leavesInChunk(leaves)
+                .plantedSaplings(saplingCount)
+                .build();
     }
 
 
@@ -320,8 +338,8 @@ public class NaturalSeedFallTask implements Runnable {
     }
 
     private void removeLeafFromCache(Chunk chunk, LeafInfo leaf) {
-        long key = convertChunkKey(chunk.getX(), chunk.getZ());
-        List<LeafInfo> list = leafCache.get(key);
+        long key = ChunkInfo.convertKey(chunk);
+        List<LeafInfo> list = chunkCache.get(key).getLeavesInChunk();
         if (list != null) list.remove(leaf);
     }
 
