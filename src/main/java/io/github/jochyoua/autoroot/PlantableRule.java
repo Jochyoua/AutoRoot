@@ -4,15 +4,13 @@ import io.github.jochyoua.autoroot.services.ConfigService;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
-import org.bukkit.Material;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
-import org.bukkit.Tag;
+import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.UUID;
 
 @Getter
 @Builder
@@ -31,6 +29,8 @@ public final class PlantableRule {
     private final Set<Particle> failureParticles;
     private final Set<Sound> successSounds;
     private final Set<Sound> failureSounds;
+    private final Set<UUID> worldWhitelist;
+    private final Set<UUID> worldBlacklist;
 
     public boolean isBiomeAllowed(Block soil) {
         Set<Biome> biomeSet = getWhitelistedBiomes();
@@ -58,6 +58,18 @@ public final class PlantableRule {
     public boolean passesChance(double randomValue, double defaultChance) {
         double chance = plantChance >= 0 ? plantChance : defaultChance;
         return randomValue <= chance;
+    }
+
+    public boolean isWorldBlacklisted(World world) {
+        if (world == null) return false;
+
+        return worldBlacklist.contains(world.getUID());
+    }
+
+    public boolean isWorldWhitelisted(World world) {
+        if (world == null) return false;
+
+        return worldWhitelist.contains(world.getUID());
     }
 
 }

@@ -104,15 +104,15 @@ public class InfoCommand implements SubCommand {
     private String getPlantInfo(PlantableRule rule) {
         String triggerItems = rule.getTriggerItems().isEmpty()
                 ? "None"
-                : "[" + rule.getTriggerItems().stream().map(Enum::name).collect(Collectors.joining(", [")) +"]";
+                : "" + rule.getTriggerItems().stream().map(Enum::name).collect(Collectors.joining(","));
 
         String validBlocksBelow = rule.getValidBlocksBelow().isEmpty()
                 ? "Any"
-                : "[" + rule.getValidBlocksBelow().stream().map(Enum::name).collect(Collectors.joining("], [")) +"]";
+                : "" + rule.getValidBlocksBelow().stream().map(Enum::name).collect(Collectors.joining(", "));
 
         String commandList = rule.getValidBlocksBelow().isEmpty()
                 ? "None"
-                : "[" + String.join("], [", rule.getCommandsToExecute()) + "]";
+                :  String.join(", ", rule.getCommandsToExecute());
 
         String whitelistedBiomes;
         if (rule.getWhitelistedBiomes().isEmpty()) {

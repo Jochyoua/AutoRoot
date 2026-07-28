@@ -1,5 +1,6 @@
 package io.github.jochyoua.autoroot.services;
 
+import com.google.common.util.concurrent.AtomicLongMap;
 import io.github.jochyoua.autoroot.AutoRoot;
 import io.github.jochyoua.autoroot.PlantableRule;
 import lombok.Getter;
@@ -24,6 +25,8 @@ public final class ConfigService {
     private final Set<Tag<Material>> ignoredVegetationTags = new HashSet<>();
     private Set<String> defaultCommands = new HashSet<>();
     private final List<String> defaultValidBlocks = new ArrayList<>();
+    private Set<UUID> defaultBlacklistedWorlds = new HashSet<>();
+    private Set<UUID> defaultWhitelistedWorlds = new HashSet<>();
     private int delayTicks;
     private int scanTicks;
     private int fallingSeedsIntervalTicks;
@@ -60,6 +63,7 @@ public final class ConfigService {
     private Set<Sound>  defaultFailureSounds;
     private long chunkLeafDensityLimit;
     private long chunkSaplingDensityLimit;
+    private boolean defaultIsEnabled;
 
     public ConfigService(AutoRoot plugin) {
         this.plugin = plugin;
@@ -143,6 +147,11 @@ public final class ConfigService {
         defaultFailureSounds = parseEnum(Sound.class, cfg.getStringList("defaults.failure_sounds"));
         defaultCommands.clear();
         defaultCommands.addAll(cfg.getStringList("defaults.commands"));
+        defaultBlacklistedWorlds.clear();
+        defaultBlacklistedWorlds.addAll(generateWorldUUIDs(cfg.getStringList("default.world_blacklist")));
+        defaultWhitelistedWorlds.clear();
+        defaultWhitelistedWorlds.addAll(generateWorldUUIDs(cfg.getStringList("default.world_whitelist")));
+        defaultIsEnabled = cfg.getBoolean("defaults.is_enabled", true);
     }
 
     private void loadIgnoreVegetation(FileConfiguration cfg) {
@@ -213,6 +222,19 @@ public final class ConfigService {
         }
     }
 
+    private Set<UUID> generateWorldUUIDs(List<String> worldList) {
+        Set<UUID> worldUUIDs = new HashSet<>();
+        for(String w : worldList) {
+            World world = Bukkit.getWorld(w);
+            if(world != null){
+                worldUUIDs.add(world.getUID());
+            } else {
+                plugin.debugMessage("World " + w + " does not exist. Double check your configuration.");
+            }
+        }
+        return worldUUIDs;
+    }
+
     private void loadPlantables(FileConfiguration cfg) {
         plantablesByBlock.clear();
         plantablesByItem.clear();
@@ -234,9 +256,15 @@ public final class ConfigService {
                 continue;
             }
 
+            boolean isEnabled = cfg.getBoolean(base + ".is_enabled", defaultIsEnabled);
+
+            if(!isEnabled) return;
+
             Set<Material> validBlocks = loadMaterialList(cfg.getStringList(base + ".valid_blocks"));
             Set<Material> items = loadMaterialList(cfg.getStringList(base + ".items"));
             Set<Biome> validBiomes = loadBiomes(cfg.getStringList(base + ".biome_whitelist"));
+            Set<UUID> whitelistedWorlds = generateWorldUUIDs(cfg.getStringList(base + ".world_whitelist"));
+            Set<UUID> blacklistedWorlds = generateWorldUUIDs(cfg.getStringList(base + ".world_blacklist"));
 
             double chance = cfg.getDouble(base + ".plant_chance", defaultPlantChance);
             boolean enableFallingSeeds = cfg.getBoolean(base + ".enable_falling_seeds", defaultEnableFallingSeeds);
@@ -290,6 +318,8 @@ public final class ConfigService {
                     .failureParticles(failureParticles)
                     .successSounds(successSounds)
                     .failureSounds(failureSounds)
+                    .worldBlacklist(blacklistedWorlds)
+                    .worldWhitelist(whitelistedWorlds)
                     .build();
 
             plantablesByBlock.put(block, rule);

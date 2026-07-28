@@ -56,6 +56,8 @@ defaults:
   destroy_item_on_failure: false
   success_particles: [ VILLAGER_HAPPY, HEART, BLOCK_CRACK, ITEM_CRACK ]
   failure_particles: [ SMOKE_NORMAL, CLOUD, BLOCK_CRACK, ITEM_CRACK ]
+  world_whitelist: [ ]
+  world_blacklist: []
 
   success_sound: [ LEVEL_UP, NOTE_PLING ]
   failure_sound: [ DIG_WOOD, DIG_GRASS ]
@@ -71,6 +73,7 @@ plantables:
       - 'minecraft:tellraw %nearest_player_name% "&e[AutoRoot] &7I hope the trade-off was worth the exchange!"'
       - '[randomEntry] minecraft:give %nearest_player_name% emerald 1 | minecraft:give %nearest_player_name% gold_ingot 1'
     destroy_item_on_failure: true
+    is_enabled: true
 
   # --- TREES ---
 

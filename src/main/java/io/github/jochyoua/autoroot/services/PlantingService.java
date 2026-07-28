@@ -12,6 +12,8 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Directional;
+import org.bukkit.block.data.MultipleFacing;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -19,7 +21,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.ArrayDeque;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 
@@ -74,16 +76,26 @@ public class PlantingService {
         Location loc = item.getLocation();
         if (loc.getWorld() == null) return;
 
+
+        if (rule.isWorldBlacklisted(loc.getWorld())) {
+            plugin.debugMessage("World is blacklisted for " + rule.getPlantBlock() + " for world " + loc.getWorld().getName());
+            return;
+        }
+
+        if (!rule.getWorldWhitelist().isEmpty() && !rule.isWorldWhitelisted(loc.getWorld())) {
+            plugin.debugMessage("World is NOT whitelisted for " + rule.getPlantBlock() + " for world " + loc.getWorld().getName());
+            return;
+        }
+
         Block target = getTargetBlock(loc, rule);
         Block soil = target.getRelative(0, -1, 0);
 
 
-
-        if (!isValidSoil(rule, soil)) {
+        if (!rule.isBiomeAllowed(soil)) {
             return;
         }
 
-        if (!rule.isBiomeAllowed(soil)) {
+        if (!isValidSoil(rule, soil)) {
             return;
         }
 
@@ -202,8 +214,34 @@ public class PlantingService {
             }
         }
 
-
         target.setType(plantMaterial);
+
+        BlockData blockData = target.getBlockData();
+        if(blockData instanceof MultipleFacing){
+            MultipleFacing mf = (MultipleFacing) blockData;
+            List<BlockFace> faces = new ArrayList<>(mf.getAllowedFaces());
+            Collections.shuffle(faces);
+            for (BlockFace face : faces) {
+                if (target.getRelative(face).getType().isSolid()) {
+                    mf.setFace(face, true);
+                    target.setBlockData(blockData, true);
+                    break;
+                }
+            }
+        }
+
+        if(blockData instanceof Directional){
+            Directional dir = (Directional) blockData;
+            List<BlockFace> faces = new ArrayList<>(dir.getFaces());
+            Collections.shuffle(faces);
+            for (BlockFace face : faces) {
+                if (target.getRelative(face).getType().isSolid()) {
+                    dir.setFacing(face.getOppositeFace());
+                    target.setBlockData(blockData, true);
+                    break;
+                }
+            }
+        }
         executeRuleCommands(rule, player, target);
         return true;
     }
@@ -369,11 +407,7 @@ public class PlantingService {
             }
 
             if (type == Particle.DustTransition.class) {
-                Particle.DustTransition transition = new Particle.DustTransition(
-                        Color.fromRGB(255, 255, 255),
-                        Color.fromRGB(0, 255, 0),
-                        1.0f
-                );
+                Particle.DustTransition transition = new Particle.DustTransition(Color.fromRGB(255, 255, 255), Color.fromRGB(0, 255, 0), 1.0f);
                 world.spawnParticle(particle, location, 8, 0.2, 0.2, 0.2, 0.02, transition);
                 return;
             }
