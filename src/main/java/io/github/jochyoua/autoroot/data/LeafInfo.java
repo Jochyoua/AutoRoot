@@ -1,11 +1,13 @@
-package io.github.jochyoua.autoroot;
+package io.github.jochyoua.autoroot.data;
 
 import lombok.Getter;
+import lombok.ToString;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 
 @Getter
+@ToString
 public class LeafInfo {
     private final Block block;
     private final Material material;
@@ -21,15 +23,4 @@ public class LeafInfo {
         this.biome = biome;
     }
 
-
-    @Override
-    public String toString() {
-        return "LeafInfo{" +
-                "loc=" + (block != null ? block.getLocation() : "null") +
-                ", material=" + material +
-                ", persistent=" + persistent +
-                ", distance=" + distance +
-                ", biome=" + biome +
-                '}';
-    }
 }

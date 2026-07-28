@@ -1,4 +1,4 @@
-package io.github.jochyoua.autoroot;
+package io.github.jochyoua.autoroot.data;
 
 import io.github.jochyoua.autoroot.services.ConfigService;
 import lombok.Builder;
@@ -8,7 +8,6 @@ import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 
-import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
