@@ -112,8 +112,14 @@ public class PlantingService {
             return;
         }
         long chunkKey = ChunkInfo.convertKey(soil.getChunk());
-        ChunkInfo chunkInfo = plugin.getNaturalSeedFallTask().getChunkCache().computeIfAbsent(chunkKey, k -> plugin.getNaturalSeedFallTask().scanChunk(soil.getChunk()));
-        if (chunkInfo != null && chunkInfo.getPlantedSaplings() >= config.getChunkSaplingDensityLimit()) {
+        ChunkInfo chunkInfo = plugin.getNaturalSeedFallTask().getChunkCache().get(chunkKey);
+        if (chunkInfo == null) {
+            plugin.debugMessage("ChunkInfo was null. Failed to plant sapling.");
+            playFailureEffects(target, rule);
+            return;
+        }
+
+        if (chunkInfo.getPlantedSaplings() >= config.getChunkSaplingDensityLimit()) {
             plugin.debugMessage("Chunk sapling density is too high! Bypassing planting.");
             playFailureEffects(target, rule);
             return;

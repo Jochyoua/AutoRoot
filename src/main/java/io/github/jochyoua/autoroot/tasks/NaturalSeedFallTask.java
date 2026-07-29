@@ -10,6 +10,7 @@ import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Leaves;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
@@ -20,7 +21,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadLocalRandom;
-
 
 
 public class NaturalSeedFallTask implements Runnable {
@@ -51,16 +51,25 @@ public class NaturalSeedFallTask implements Runnable {
 
     @Override
     public void run() {
-        if(!plugin.isEnableFunctionality()) return;
-        if (!config.isFallingSeedsEnabled()) return;
+        if (!plugin.isEnableFunctionality()) return;
+        int playerSize = Bukkit.getOnlinePlayers().size();
         long now = System.currentTimeMillis();
+
+
+        if (now - lastLeafCacheReset >= cacheLifespan) {
+            if (playerSize != 0) {
+                plugin.debugMessage("Leaf Cache reset after " + cacheLifespan + "ms (" + playerSize + " players)");
+            }
+            chunkCache.clear();
+            lastLeafCacheReset = now;
+        }
 
         if (now - lastCycle >= config.getFallingSeedsIntervalTicks() * 50L) {
             seedsThisCycle = 0;
             lastCycle = now;
         }
 
-        int playerSize = Bukkit.getOnlinePlayers().size();
+        if (!config.isFallingSeedsEnabled()) return;
 
         if (config.isLeafCacheDynamicScalingEnabled()) {
             long max = config.getLeafCacheMaxLifespanMs();
@@ -69,14 +78,6 @@ public class NaturalSeedFallTask implements Runnable {
 
             long dynamic = base / Math.max(1, playerSize);
             cacheLifespan = Math.min(max, Math.max(min, dynamic));
-        }
-
-        if (now - lastLeafCacheReset >= cacheLifespan) {
-            if(playerSize != 0) {
-                plugin.debugMessage("Leaf Cache reset after " + cacheLifespan + "ms (" + playerSize + " players)");
-            }
-            chunkCache.clear();
-            lastLeafCacheReset = now;
         }
 
         naturalSeeds.removeIf(item -> {
@@ -101,9 +102,10 @@ public class NaturalSeedFallTask implements Runnable {
 
                 for (int dx = -1; dx <= 1; dx++) {
                     for (int dz = -2; dz <= 2; dz++) {
-                        Chunk chunk = world.getChunkAt(cx + dx, cz + dz);
-                        if (chunk.isLoaded()) {
-                            listOfValidChunks.add(chunk);
+                        int targetX = cx + dx;
+                        int targetZ = cz + dz;
+                        if (world.isChunkLoaded(targetX, targetZ)) {
+                            listOfValidChunks.add(world.getChunkAt(targetX, targetZ));
                         }
                     }
                 }
@@ -119,26 +121,30 @@ public class NaturalSeedFallTask implements Runnable {
         for (Chunk chunk : chunksToProcess) {
             if (processed >= maxChunksThisCycle) {
                 plugin.debugMessage("Too many chunks this cycle: " + processed + "/" + maxChunksThisCycle);
-                break;
+                continue;
             }
 
             if (seedsThisCycle >= config.getMaxSeedsPerCycle()) {
                 plugin.debugMessage("Too many seeds this cycle: " + seedsThisCycle + "/" + config.getMaxSeedsPerCycle());
-                break;
+                continue;
             }
 
             long key = ChunkInfo.convertKey(chunk);
 
             if (!chunkCache.containsKey(key)) {
-                chunkCache.put(key, scanChunk(chunk));
+                ChunkSnapshot snapshot = chunk.getChunkSnapshot(true, true, true);
+                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                    chunkCache.put(key, scanChunkSnapshot(chunk, snapshot));
+                });
                 continue;
             }
 
-            if (chunkCache.get(key).getLeavesInChunk().isEmpty()) continue;
+            if (chunkCache.get(key).getLeavesInChunk().isEmpty()) {
+                continue;
+            }
 
-            if (chunkCache.get(key).getLeavesInChunk().size() > config.getChunkLeafDensityLimit()) {
-                plugin.debugMessage("Too many leaves in chunk: "
-                        + chunkCache.get(key).getLeavesInChunk().size() + "/" + config.getChunkLeafDensityLimit());
+            if (chunkCache.get(key).getLeavesInChunk().size() >= config.getChunkLeafDensityLimit()) {
+                plugin.debugMessage("Too many leaves in chunk: " + chunkCache.get(key).getLeavesInChunk().size() + "/" + config.getChunkLeafDensityLimit());
                 chunkCache.get(key).getLeavesInChunk().clear();
                 continue;
             }
@@ -211,7 +217,6 @@ public class NaturalSeedFallTask implements Runnable {
     private void startAsyncChunkProcessing(final Chunk chunk) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             Map<String, Object> decision = evaluateChunkAsync(chunk);
-
             if (!decision.isEmpty()) {
                 Bukkit.getScheduler().runTask(plugin, () -> applyDecisionSync(decision));
             }
@@ -267,14 +272,19 @@ public class NaturalSeedFallTask implements Runnable {
         return LeafFailReasonEnum.OK;
     }
 
-
     public ChunkInfo scanChunk(Chunk chunk) {
         long chunkKey = ChunkInfo.convertKey(chunk);
-        if(chunkCache.containsKey(chunkKey))
-            return chunkCache.get(ChunkInfo.convertKey(chunk));
+        if (chunkCache.containsKey(chunkKey)) return chunkCache.get(chunkKey);
 
-        List<LeafInfo> leaves = new CopyOnWriteArrayList<>();
+        return scanChunkSnapshot(chunk, chunk.getChunkSnapshot(true, true, true));
+    }
+
+    public ChunkInfo scanChunkSnapshot(Chunk chunk, ChunkSnapshot snapshot) {
+        long chunkKey = ChunkInfo.convertKey(chunk);
+        if (chunkCache.containsKey(chunkKey)) return chunkCache.get(chunkKey);
+
         World world = chunk.getWorld();
+        List<LeafInfo> leaves = new CopyOnWriteArrayList<>();
 
         int worldMin = world.getMinHeight();
         int worldMax = world.getMaxHeight();
@@ -285,49 +295,46 @@ public class NaturalSeedFallTask implements Runnable {
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
 
-                int highest = world.getHighestBlockYAt((chunk.getX() << 4) + x, (chunk.getZ() << 4) + z);
+                int highest = snapshot.getHighestBlockYAt(x, z);
 
                 int minLeafY = Math.max(highest - 20, worldMin);
                 int maxLeafY = Math.min(highest + 8, maxLeafScanHeight);
 
-                Block previousBlock = null;
+                Material previousType = Material.AIR;
 
                 for (int y = worldMin; y < worldMax; y++) {
-                    Block block = chunk.getBlock(x, y, z);
-                    Material type = block.getType();
+                    Material type = snapshot.getBlockType(x, y, z);
 
                     if (Tag.SAPLINGS.isTagged(type)) {
                         saplingCount++;
                     }
 
                     if (y >= minLeafY && y <= maxLeafY) {
-                        if (block.getBlockData() instanceof Leaves) {
-                            Leaves data = (Leaves) block.getBlockData();
-                            boolean isExposedUnderneath = (y == worldMin) ||
-                                    (previousBlock != null && previousBlock.getType() == Material.AIR);
+                        if (Tag.LEAVES.isTagged(type)) {
+                            boolean isExposedUnderneath = (y == worldMin) || (previousType == Material.AIR);
 
                             if (isExposedUnderneath) {
-                                leaves.add(new LeafInfo(
-                                        block,
-                                        type,
-                                        data.isPersistent(),
-                                        data.getDistance(),
-                                        block.getBiome()
-                                ));
+                                BlockData blockData = snapshot.getBlockData(x, y, z);
+                                boolean persistent = false;
+                                int distance = 1;
+
+                                if (blockData instanceof Leaves) {
+                                    Leaves leavesData = (Leaves) blockData;
+                                    persistent = leavesData.isPersistent();
+                                    distance = leavesData.getDistance();
+                                }
+
+                                leaves.add(new LeafInfo(chunk.getBlock(x, y, z), type, persistent, distance, snapshot.getBiome(x, y, z)));
                             }
                         }
                     }
 
-                    previousBlock = block;
+                    previousType = type;
                 }
             }
         }
 
-        return ChunkInfo.builder()
-                .chunkKey(chunkKey)
-                .leavesInChunk(leaves)
-                .plantedSaplings(saplingCount)
-                .build();
+        return ChunkInfo.builder().chunkKey(chunkKey).leavesInChunk(leaves).plantedSaplings(saplingCount).build();
     }
 
 
